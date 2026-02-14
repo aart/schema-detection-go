@@ -20,7 +20,7 @@ This plan outlines the tasks required to implement the core schema detection log
 - [x] Task: Implement support for `REPEATED` primitive types. [9142b38]
     - [x] Write tests for repeated primitive type inference.
     - [x] Implement repeated primitive type inference.
-- [x] Task: Implement support for `REPEATED RECORD` types (arrays of objects).
+- [x] Task: Implement support for `REPEATED RECORD` types (arrays of objects). [bdce63b]
     - [x] Write tests for repeated record inference, ensuring the schema is merged from all objects in the array.
     - [x] Implement repeated record inference.
 - [ ] Task: Conductor - User Manual Verification 'Phase 2: Handling Nested and Repeated Structures' (Protocol in workflow.md)
