@@ -26,13 +26,13 @@ Features:
 - Command line interface (CLI) with enabling configurability
 - Single binary executable. Should play well together with Google CLI tools like gcloud and bq.
 - Basic test case automation
+- Constraint relaxation for the "Required" attribute
+- Handling of the JSON string literal "null"
+- Schema inference by parsing through repeated records
 
 Not supported yet:
 - API integration with Google Cloud (Cloud Storage, Bigquery)
-- Constraint relaxation for the "Required" attribute
-- No handling for the JSON string literal "null"
 - Distribution or clustered deployment
-- Schema inference by parsing through repeated records (now the nested schema is based on the first element)
 - Incomplete support for string-wrapped types: Timestamp, Time, Date, Geo-types, ...
 - Deployment on Dataflow
 

@@ -13,6 +13,7 @@ This project is built using go, leveraging its performance and concurrency featu
 -   **cloud.google.com/go/bigquery** import and use the BigQuery schema and field types
 -	**encoding/json** for parsing the json in the ndjson files
 -	**sync"** for protecting the shared data structures from concurrent access
+-   **github.com/google/go-cmp/cmp** for comparing complex structs in tests
 
 ## Architecture
 
