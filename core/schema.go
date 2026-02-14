@@ -156,18 +156,23 @@ func mustMarshal(value interface{}) []byte {
 }
 
 // InferSchemaConcurrently infers the schema from a channel of JSON strings concurrently.
-func InferSchemaConcurrently(linesResult *LinesResult, numWorkers int) *Schema {
+func InferSchemaConcurrently(lines <-chan string, numWorkers int) *Schema {
 	var wg sync.WaitGroup
 	schemas := make(chan *Schema, numWorkers)
 	fieldCounts := make(map[string]int)
 	var mu sync.Mutex
+	var totalLines int
 
 	for i := 0; i < numWorkers; i++ {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
 			var localMergedSchema *Schema
-			for line := range linesResult.Lines {
+			for line := range lines {
+				mu.Lock()
+				totalLines++
+				mu.Unlock()
+
 				schema, err := InferSchema([]byte(line))
 				if err != nil {
 					// In a real application, you'd want to handle this error better.
@@ -208,7 +213,7 @@ func InferSchemaConcurrently(linesResult *LinesResult, numWorkers int) *Schema {
 	// Final check for required fields.
 	for _, field := range finalSchema.Fields {
 		if count, ok := fieldCounts[field.Name]; ok {
-			field.Required = count == linesResult.TotalLines
+			field.Required = count == totalLines
 		}
 	}
 
