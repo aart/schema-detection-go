@@ -14,7 +14,7 @@ This plan outlines the tasks required to implement the core schema detection log
 
 ## Phase 2: Handling Nested and Repeated Structures
 
-- [x] Task: Implement support for nested `RECORD` (JSON object) types.
+- [x] Task: Implement support for nested `RECORD` (JSON object) types. [26c5f29]
     - [x] Write tests for nested record inference.
     - [x] Implement nested record inference.
 - [ ] Task: Implement support for `REPEATED` primitive types.
