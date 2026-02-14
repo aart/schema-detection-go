@@ -14,7 +14,7 @@ This plan outlines the tasks required to refactor the schema detection implement
 
 ## Phase 2: Benchmarking and Validation
 
-- [x] Task: Create benchmark tests to measure performance improvement.
+- [x] Task: Create benchmark tests to measure performance improvement. [56d2650]
     - [x] Write benchmark tests.
     - [x] Run benchmark tests and document the results.
 - [ ] Task: Conductor - User Manual Verification 'Phase 2: Benchmarking and Validation' (Protocol in workflow.md)
