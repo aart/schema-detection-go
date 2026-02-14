@@ -34,7 +34,7 @@ The system will map JSON data types to BigQuery data types as follows:
 
 ## 3. Non-Functional Requirements
 
-### 3.1. Performance
+### 3.1. Performance through Concurrency
 - The implementation should leverage Go's concurrency features to process large NDJSON files efficiently.
 - The scanning through the ndjson file should be parallelized. Example file are provided in the ndjson/benchmarks folder.
 - The scanning (file i/o) and inference processing should communicate via a golang channel. Following a producer consumer pattern with multiple producers and multiple consumers.
