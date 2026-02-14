@@ -99,15 +99,14 @@ func inferFieldSchema(name string, value interface{}) (*FieldSchema, error) {
 
 func mergeSchemas(s1, s2 *Schema) *Schema {
 	merged := &Schema{Fields: s1.Fields}
+
+	// Add fields from s2 that are not in s1
 	for _, f2 := range s2.Fields {
 		found := false
 		for _, f1 := range merged.Fields {
 			if f1.Name == f2.Name {
 				found = true
 				if f1.Type != f2.Type {
-					// In a real scenario, you might want to handle this more gracefully,
-					// e.g., by picking a more general type.
-					// For now, we'll just panic.
 					panic(fmt.Sprintf("type mismatch for field %s: %s vs %s", f1.Name, f1.Type, f2.Type))
 				}
 				if f1.Repeated != f2.Repeated {
@@ -116,6 +115,7 @@ func mergeSchemas(s1, s2 *Schema) *Schema {
 				if f1.Type == bigquery.RecordFieldType {
 					f1.Fields = mergeSchemas(&Schema{Fields: f1.Fields}, &Schema{Fields: f2.Fields}).Fields
 				}
+				break
 			}
 		}
 		if !found {
@@ -124,7 +124,7 @@ func mergeSchemas(s1, s2 *Schema) *Schema {
 		}
 	}
 
-	// After merging, check if fields from s1 are present in s2. If not, mark them as not required.
+	// Mark fields from s1 as not required if they are not in s2
 	for _, f1 := range merged.Fields {
 		found := false
 		for _, f2 := range s2.Fields {

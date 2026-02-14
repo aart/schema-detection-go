@@ -93,6 +93,37 @@ func TestInferSchema(t *testing.T) {
 	}
 }
 
+func TestInferSchema_NullableField(t *testing.T) {
+	jsonLines := []string{
+		`{"name": "test1"}`,
+		`{"name": "test2", "age": 30}`,
+	}
+
+	var mergedSchema *Schema
+	for _, line := range jsonLines {
+		schema, err := InferSchema([]byte(line))
+		if err != nil {
+			t.Fatalf("InferSchema failed: %v", err)
+		}
+		if mergedSchema == nil {
+			mergedSchema = schema
+		} else {
+			mergedSchema = mergeSchemas(mergedSchema, schema)
+		}
+	}
+
+	expectedSchema := &Schema{
+		Fields: []*FieldSchema{
+			{Name: "age", Type: bigquery.IntegerFieldType, Required: false},
+			{Name: "name", Type: bigquery.StringFieldType, Required: true},
+		},
+	}
+
+	if !cmp.Equal(expectedSchema, mergedSchema) {
+		t.Errorf("Expected schema %v, got %v", expectedSchema, mergedSchema)
+	}
+}
+
 func TestInferSchema_UnsupportedType(t *testing.T) {
 	jsonData := `{"data": null}`
 	_, err := InferSchema([]byte(jsonData))
