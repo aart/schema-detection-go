@@ -8,22 +8,51 @@ import (
 )
 
 func TestInferSchema(t *testing.T) {
-	jsonData := `{"name": "test", "age": 42, "is_developer": true}`
-
-	expectedSchema := &Schema{
-		Fields: []*FieldSchema{
-			{Name: "age", Type: bigquery.IntegerFieldType, Required: true},
-			{Name: "is_developer", Type: bigquery.BooleanFieldType, Required: true},
-			{Name: "name", Type: bigquery.StringFieldType, Required: true},
+	testCases := []struct {
+		name           string
+		jsonData       string
+		expectedSchema *Schema
+	}{
+		{
+			name:     "simple case",
+			jsonData: `{"name": "test", "age": 42, "is_developer": true}`,
+			expectedSchema: &Schema{
+				Fields: []*FieldSchema{
+					{Name: "age", Type: bigquery.IntegerFieldType, Required: true},
+					{Name: "is_developer", Type: bigquery.BooleanFieldType, Required: true},
+					{Name: "name", Type: bigquery.StringFieldType, Required: true},
+				},
+			},
+		},
+		{
+			name:     "float number",
+			jsonData: `{"price": 12.34}`,
+			expectedSchema: &Schema{
+				Fields: []*FieldSchema{
+					{Name: "price", Type: bigquery.FloatFieldType, Required: true},
+				},
+			},
 		},
 	}
 
-	inferredSchema, err := InferSchema([]byte(jsonData))
-	if err != nil {
-		t.Fatalf("InferSchema failed: %v", err)
-	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			inferredSchema, err := InferSchema([]byte(tc.jsonData))
+			if err != nil {
+				t.Fatalf("InferSchema failed: %v", err)
+			}
 
-	if !cmp.Equal(expectedSchema, inferredSchema) {
-		t.Errorf("Expected schema %v, got %v", expectedSchema, inferredSchema)
+			if !cmp.Equal(tc.expectedSchema, inferredSchema) {
+				t.Errorf("Expected schema %v, got %v", tc.expectedSchema, inferredSchema)
+			}
+		})
+	}
+}
+
+func TestInferSchema_UnsupportedType(t *testing.T) {
+	jsonData := `{"data": null}`
+	_, err := InferSchema([]byte(jsonData))
+	if err == nil {
+		t.Fatal("Expected an error for an unsupported type, but got nil")
 	}
 }

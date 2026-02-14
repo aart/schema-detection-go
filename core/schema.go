@@ -55,8 +55,12 @@ func inferType(value interface{}) (bigquery.FieldType, error) {
 	case string:
 		return bigquery.StringFieldType, nil
 	case float64:
-		// json.Unmarshal uses float64 for all numbers
-		return bigquery.IntegerFieldType, nil
+		// json.Unmarshal uses float64 for all numbers.
+		// Check if the number is an integer.
+		if float64(int64(value.(float64))) == value.(float64) {
+			return bigquery.IntegerFieldType, nil
+		}
+		return bigquery.FloatFieldType, nil
 	case bool:
 		return bigquery.BooleanFieldType, nil
 	default:
