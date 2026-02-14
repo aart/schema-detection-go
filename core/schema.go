@@ -63,6 +63,16 @@ func inferFieldSchema(name string, value interface{}) (*FieldSchema, error) {
 			return nil, err
 		}
 		return &FieldSchema{Name: name, Type: bigquery.RecordFieldType, Fields: subSchema.Fields, Required: true}, nil
+	case []interface{}:
+		if len(value) == 0 {
+			return nil, fmt.Errorf("cannot infer type from empty slice")
+		}
+		elemField, err := inferFieldSchema(name, value[0])
+		if err != nil {
+			return nil, err
+		}
+		elemField.Repeated = true
+		return elemField, nil
 	default:
 		return nil, fmt.Errorf("unsupported type: %T", value)
 	}

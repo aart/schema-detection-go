@@ -50,6 +50,15 @@ func TestInferSchema(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:     "repeated primitive",
+			jsonData: `{"scores": [1, 2, 3]}`,
+			expectedSchema: &Schema{
+				Fields: []*FieldSchema{
+					{Name: "scores", Type: bigquery.IntegerFieldType, Repeated: true, Required: true},
+				},
+			},
+		},
 	}
 
 	for _, tc := range testCases {
