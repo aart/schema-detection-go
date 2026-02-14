@@ -33,6 +33,23 @@ func TestInferSchema(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:     "nested record",
+			jsonData: `{"person": {"name": "test", "age": 30}}`,
+			expectedSchema: &Schema{
+				Fields: []*FieldSchema{
+					{
+						Name: "person",
+						Type: bigquery.RecordFieldType,
+						Fields: []*FieldSchema{
+							{Name: "age", Type: bigquery.IntegerFieldType, Required: true},
+							{Name: "name", Type: bigquery.StringFieldType, Required: true},
+						},
+						Required: true,
+					},
+				},
+			},
+		},
 	}
 
 	for _, tc := range testCases {

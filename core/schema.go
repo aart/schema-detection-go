@@ -32,15 +32,11 @@ func InferSchema(jsonData []byte) (*Schema, error) {
 
 	schema := &Schema{}
 	for key, value := range data {
-		fieldType, err := inferType(value)
+		fieldSchema, err := inferFieldSchema(key, value)
 		if err != nil {
 			return nil, err
 		}
-		schema.Fields = append(schema.Fields, &FieldSchema{
-			Name:     key,
-			Type:     fieldType,
-			Required: true,
-		})
+		schema.Fields = append(schema.Fields, fieldSchema)
 	}
 
 	sort.Slice(schema.Fields, func(i, j int) bool {
@@ -50,20 +46,33 @@ func InferSchema(jsonData []byte) (*Schema, error) {
 	return schema, nil
 }
 
-func inferType(value interface{}) (bigquery.FieldType, error) {
-	switch value.(type) {
+func inferFieldSchema(name string, value interface{}) (*FieldSchema, error) {
+	switch value := value.(type) {
 	case string:
-		return bigquery.StringFieldType, nil
+		return &FieldSchema{Name: name, Type: bigquery.StringFieldType, Required: true}, nil
 	case float64:
-		// json.Unmarshal uses float64 for all numbers.
-		// Check if the number is an integer.
-		if float64(int64(value.(float64))) == value.(float64) {
-			return bigquery.IntegerFieldType, nil
+		if float64(int64(value)) == value {
+			return &FieldSchema{Name: name, Type: bigquery.IntegerFieldType, Required: true}, nil
 		}
-		return bigquery.FloatFieldType, nil
+		return &FieldSchema{Name: name, Type: bigquery.FloatFieldType, Required: true}, nil
 	case bool:
-		return bigquery.BooleanFieldType, nil
+		return &FieldSchema{Name: name, Type: bigquery.BooleanFieldType, Required: true}, nil
+	case map[string]interface{}:
+		subSchema, err := InferSchema(mustMarshal(value))
+		if err != nil {
+			return nil, err
+		}
+		return &FieldSchema{Name: name, Type: bigquery.RecordFieldType, Fields: subSchema.Fields, Required: true}, nil
 	default:
-		return "", fmt.Errorf("unsupported type: %T", value)
+		return nil, fmt.Errorf("unsupported type: %T", value)
 	}
 }
+
+func mustMarshal(value interface{}) []byte {
+	bytes, err := json.Marshal(value)
+	if err != nil {
+		panic(err)
+	}
+	return bytes
+}
+
