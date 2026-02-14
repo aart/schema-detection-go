@@ -59,6 +59,24 @@ func TestInferSchema(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:     "repeated record",
+			jsonData: `{"people": [{"name": "test1"}, {"name": "test2", "age": 30}]}`,
+			expectedSchema: &Schema{
+				Fields: []*FieldSchema{
+					{
+						Name: "people",
+						Type: bigquery.RecordFieldType,
+						Repeated: true,
+						Fields: []*FieldSchema{
+							{Name: "age", Type: bigquery.IntegerFieldType, Required: false},
+							{Name: "name", Type: bigquery.StringFieldType, Required: true},
+						},
+						Required: true,
+					},
+				},
+			},
+		},
 	}
 
 	for _, tc := range testCases {
