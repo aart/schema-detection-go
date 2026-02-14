@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"sort"
+	"sync"
 
 	"cloud.google.com/go/bigquery"
 )
@@ -81,7 +82,7 @@ func inferFieldSchema(name string, value interface{}) (*FieldSchema, error) {
 				if mergedSchema == nil {
 					mergedSchema = itemSchema
 				} else {
-					mergedSchema = mergeSchemas(mergedSchema, itemSchema)
+					mergedSchema = MergeSchemas(mergedSchema, itemSchema)
 				}
 			}
 			return &FieldSchema{Name: name, Type: bigquery.RecordFieldType, Fields: mergedSchema.Fields, Repeated: true, Required: true}, nil
@@ -101,7 +102,7 @@ func inferFieldSchema(name string, value interface{}) (*FieldSchema, error) {
 	}
 }
 
-func mergeSchemas(s1, s2 *Schema) *Schema {
+func MergeSchemas(s1, s2 *Schema) *Schema {
 	fieldMap := make(map[string]*FieldSchema)
 
 	for _, f := range s1.Fields {
@@ -118,7 +119,7 @@ func mergeSchemas(s1, s2 *Schema) *Schema {
 				panic(fmt.Sprintf("repeated mismatch for field %s: %v vs %v", f1.Name, f1.Repeated, f2.Repeated))
 			}
 			if f1.Type == bigquery.RecordFieldType {
-				f1.Fields = mergeSchemas(&Schema{Fields: f1.Fields}, &Schema{Fields: f2.Fields}).Fields
+				f1.Fields = MergeSchemas(&Schema{Fields: f1.Fields}, &Schema{Fields: f2.Fields}).Fields
 			}
 			f1.Required = f1.Required && f2.Required
 		} else {
@@ -155,3 +156,52 @@ func mustMarshal(value interface{}) []byte {
 	return bytes
 }
 
+// InferSchemaConcurrently infers the schema from a channel of JSON strings concurrently.
+func InferSchemaConcurrently(lines <-chan string, numWorkers int) *Schema {
+	var wg sync.WaitGroup
+	schemas := make(chan *Schema, numWorkers)
+
+	for i := 0; i < numWorkers; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			var localMergedSchema *Schema
+			for line := range lines {
+				schema, err := InferSchema([]byte(line))
+				if err != nil {
+					// In a real application, you'd want to handle this error better.
+					continue
+				}
+				if localMergedSchema == nil {
+					localMergedSchema = schema
+				} else {
+					localMergedSchema = MergeSchemas(localMergedSchema, schema)
+				}
+			}
+			schemas <- localMergedSchema
+		}()
+	}
+
+	go func() {
+		wg.Wait()
+		close(schemas)
+	}()
+
+	var finalSchema *Schema
+	for schema := range schemas {
+		if schema == nil {
+			continue
+		}
+		if finalSchema == nil {
+			finalSchema = schema
+		} else {
+			finalSchema = MergeSchemas(finalSchema, schema)
+		}
+	}
+
+	sort.Slice(finalSchema.Fields, func(i, j int) bool {
+		return finalSchema.Fields[i].Name < finalSchema.Fields[j].Name
+	})
+
+	return finalSchema
+}

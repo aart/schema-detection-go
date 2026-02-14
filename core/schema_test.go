@@ -108,7 +108,7 @@ func TestInferSchema_NullableField(t *testing.T) {
 		if mergedSchema == nil {
 			mergedSchema = schema
 		} else {
-			mergedSchema = mergeSchemas(mergedSchema, schema)
+			mergedSchema = MergeSchemas(mergedSchema, schema)
 		}
 	}
 
@@ -139,7 +139,7 @@ func TestInferSchema_NullValue(t *testing.T) {
 		if mergedSchema == nil {
 			mergedSchema = schema
 		} else {
-			mergedSchema = mergeSchemas(mergedSchema, schema)
+			mergedSchema = MergeSchemas(mergedSchema, schema)
 		}
 	}
 
