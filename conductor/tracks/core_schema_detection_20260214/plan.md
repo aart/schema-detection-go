@@ -4,9 +4,9 @@ This plan outlines the tasks required to implement the core schema detection log
 
 ## Phase 1: Basic Schema Inference and Data Type Mapping
 
-- [ ] Task: Implement the basic file parsing and JSON object reading functionality.
-    - [ ] Write tests for file reading and parsing.
-    - [ ] Implement file reading and parsing.
+- [x] Task: Implement the basic file parsing and JSON object reading functionality.
+    - [x] Write tests for file reading and parsing.
+    - [x] Implement file reading and parsing.
 - [ ] Task: Implement initial data type mapping for primitive types (String, Integer, Float, Boolean).
     - [ ] Write tests for primitive type mapping.
     - [ ] Implement primitive type mapping.
