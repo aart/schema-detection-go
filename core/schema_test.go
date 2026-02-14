@@ -155,6 +155,20 @@ func TestInferSchema_NullValue(t *testing.T) {
 	}
 }
 
+func TestInferSchema_MalformedJSON(t *testing.T) {
+	testCases := []string{
+		`{"name": "test", "age": 42,}`,
+		`{"name": "test", "age": 42`,
+	}
+
+	for _, tc := range testCases {
+		_, err := InferSchema([]byte(tc))
+		if err == nil {
+			t.Errorf("Expected an error for malformed JSON '%s', but got nil", tc)
+		}
+	}
+}
+
 func TestInferSchema_UnsupportedType(t *testing.T) {
 	jsonData := `{"data": null}`
 	schema, err := InferSchema([]byte(jsonData))

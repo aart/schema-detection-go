@@ -33,7 +33,7 @@ This plan outlines the tasks required to implement the core schema detection log
 - [x] Task: Implement handling of the JSON string literal "null". [a43682a]
     - [x] Write tests for handling "null" values.
     - [x] Implement the "null" value handling.
-- [ ] Task: Implement robust error handling with clear, actionable error messages.
-    - [ ] Write tests for various error conditions (e.g., malformed JSON).
-    - [ ] Implement the error handling mechanisms.
+- [x] Task: Implement robust error handling with clear, actionable error messages.
+    - [x] Write tests for various error conditions (e.g., malformed JSON).
+    - [x] Implement the error handling mechanisms.
 - [ ] Task: Conductor - User Manual Verification 'Phase 3: Advanced Rules and Error Handling' (Protocol in workflow.md)
