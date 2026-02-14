@@ -30,7 +30,7 @@ This plan outlines the tasks required to implement the core schema detection log
 - [x] Task: Implement the logic for `REQUIRED` vs. `NULLABLE` fields. [c33633e]
     - [x] Write tests to verify the `REQUIRED`/`NULLABLE` logic.
     - [x] Implement the `REQUIRED`/`NULLABLE` logic.
-- [x] Task: Implement handling of the JSON string literal "null".
+- [x] Task: Implement handling of the JSON string literal "null". [a43682a]
     - [x] Write tests for handling "null" values.
     - [x] Implement the "null" value handling.
 - [ ] Task: Implement robust error handling with clear, actionable error messages.
