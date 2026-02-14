@@ -10,7 +10,7 @@ The initial concept for this project is to derive the bigQuery schema from ndjso
 
 ## Key Features
 Key Design Principles:
-- Performance through concurrency (using golang channel primitives)
+- Enhanced Performance through concurrency (using golang channel primitives for concurrent file processing)
 - Big data support through splitted input files (processed in parallel & sampling)
 - Enforce consistency checks upstream (avoid things fail downstream)
 - Fail fast in case of an error
