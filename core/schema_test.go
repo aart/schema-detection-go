@@ -124,10 +124,44 @@ func TestInferSchema_NullableField(t *testing.T) {
 	}
 }
 
+func TestInferSchema_NullValue(t *testing.T) {
+	jsonLines := []string{
+		`{"name": "test1", "age": 30}`,
+		`{"name": "test2", "age": null}`,
+	}
+
+	var mergedSchema *Schema
+	for _, line := range jsonLines {
+		schema, err := InferSchema([]byte(line))
+		if err != nil {
+			t.Fatalf("InferSchema failed: %v", err)
+		}
+		if mergedSchema == nil {
+			mergedSchema = schema
+		} else {
+			mergedSchema = mergeSchemas(mergedSchema, schema)
+		}
+	}
+
+	expectedSchema := &Schema{
+		Fields: []*FieldSchema{
+			{Name: "age", Type: bigquery.IntegerFieldType, Required: true},
+			{Name: "name", Type: bigquery.StringFieldType, Required: true},
+		},
+	}
+
+	if !cmp.Equal(expectedSchema, mergedSchema) {
+		t.Errorf("Expected schema %v, got %v", expectedSchema, mergedSchema)
+	}
+}
+
 func TestInferSchema_UnsupportedType(t *testing.T) {
 	jsonData := `{"data": null}`
-	_, err := InferSchema([]byte(jsonData))
-	if err == nil {
-		t.Fatal("Expected an error for an unsupported type, but got nil")
+	schema, err := InferSchema([]byte(jsonData))
+	if err != nil {
+		t.Fatalf("InferSchema failed: %v", err)
+	}
+	if len(schema.Fields) > 0 {
+		t.Errorf("Expected 0 fields, got %d", len(schema.Fields))
 	}
 }

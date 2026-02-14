@@ -36,7 +36,9 @@ func InferSchema(jsonData []byte) (*Schema, error) {
 		if err != nil {
 			return nil, err
 		}
-		schema.Fields = append(schema.Fields, fieldSchema)
+		if fieldSchema != nil {
+			schema.Fields = append(schema.Fields, fieldSchema)
+		}
 	}
 
 	sort.Slice(schema.Fields, func(i, j int) bool {
@@ -92,50 +94,49 @@ func inferFieldSchema(name string, value interface{}) (*FieldSchema, error) {
 		}
 		elemField.Repeated = true
 		return elemField, nil
+	case nil:
+		return nil, nil
 	default:
 		return nil, fmt.Errorf("unsupported type: %T", value)
 	}
 }
 
 func mergeSchemas(s1, s2 *Schema) *Schema {
-	merged := &Schema{Fields: s1.Fields}
+	fieldMap := make(map[string]*FieldSchema)
 
-	// Add fields from s2 that are not in s1
+	for _, f := range s1.Fields {
+		clone := *f
+		fieldMap[f.Name] = &clone
+	}
+
 	for _, f2 := range s2.Fields {
-		found := false
-		for _, f1 := range merged.Fields {
-			if f1.Name == f2.Name {
-				found = true
-				if f1.Type != f2.Type {
-					panic(fmt.Sprintf("type mismatch for field %s: %s vs %s", f1.Name, f1.Type, f2.Type))
-				}
-				if f1.Repeated != f2.Repeated {
-					panic(fmt.Sprintf("repeated mismatch for field %s: %v vs %v", f1.Name, f1.Repeated, f2.Repeated))
-				}
-				if f1.Type == bigquery.RecordFieldType {
-					f1.Fields = mergeSchemas(&Schema{Fields: f1.Fields}, &Schema{Fields: f2.Fields}).Fields
-				}
-				break
+		if f1, ok := fieldMap[f2.Name]; ok {
+			if f1.Type != f2.Type {
+				panic(fmt.Sprintf("type mismatch for field %s: %s vs %s", f1.Name, f1.Type, f2.Type))
 			}
-		}
-		if !found {
-			f2.Required = false
-			merged.Fields = append(merged.Fields, f2)
+			if f1.Repeated != f2.Repeated {
+				panic(fmt.Sprintf("repeated mismatch for field %s: %v vs %v", f1.Name, f1.Repeated, f2.Repeated))
+			}
+			if f1.Type == bigquery.RecordFieldType {
+				f1.Fields = mergeSchemas(&Schema{Fields: f1.Fields}, &Schema{Fields: f2.Fields}).Fields
+			}
+			f1.Required = f1.Required && f2.Required
+		} else {
+			clone := *f2
+			clone.Required = false
+			fieldMap[clone.Name] = &clone
 		}
 	}
 
-	// Mark fields from s1 as not required if they are not in s2
-	for _, f1 := range merged.Fields {
-		found := false
-		for _, f2 := range s2.Fields {
-			if f1.Name == f2.Name {
-				found = true
-				break
-			}
-		}
-		if !found {
+	for _, f1 := range s1.Fields {
+		if _, ok := fieldMap[f1.Name]; !ok {
 			f1.Required = false
 		}
+	}
+	
+	merged := &Schema{}
+	for _, f := range fieldMap {
+		merged.Fields = append(merged.Fields, f)
 	}
 
 	sort.Slice(merged.Fields, func(i, j int) bool {
