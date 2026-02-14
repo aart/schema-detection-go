@@ -12,7 +12,7 @@ This plan outlines the tasks required to implement the core schema detection log
     - [x] Implement primitive type mapping.
 - [x] Task: Conductor - User Manual Verification 'Phase 1: Basic Schema Inference and Data Type Mapping' (Protocol in workflow.md)
 
-## Phase 2: Handling Nested and Repeated Structures
+## Phase 2: Handling Nested and Repeated Structures [checkpoint: 74e3862]
 
 - [x] Task: Implement support for nested `RECORD` (JSON object) types. [26c5f29]
     - [x] Write tests for nested record inference.
@@ -23,7 +23,7 @@ This plan outlines the tasks required to implement the core schema detection log
 - [x] Task: Implement support for `REPEATED RECORD` types (arrays of objects). [bdce63b]
     - [x] Write tests for repeated record inference, ensuring the schema is merged from all objects in the array.
     - [x] Implement repeated record inference.
-- [ ] Task: Conductor - User Manual Verification 'Phase 2: Handling Nested and Repeated Structures' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 2: Handling Nested and Repeated Structures' (Protocol in workflow.md)
 
 ## Phase 3: Advanced Rules and Error Handling
 
