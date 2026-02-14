@@ -39,10 +39,10 @@ func TestReadLinesConcurrently(t *testing.T) {
 	}
 
 	paths := []string{tmpfile1.Name(), tmpfile2.Name()}
-	linesChan := ReadLinesConcurrently(paths)
+	linesResult := ReadLinesConcurrently(paths)
 
 	var lines []string
-	for line := range linesChan {
+	for line := range linesResult.Lines {
 		lines = append(lines, line)
 	}
 
@@ -82,8 +82,8 @@ func TestInferSchemaConcurrently(t *testing.T) {
 	}
 
 	paths := []string{tmpfile1.Name(), tmpfile2.Name()}
-	linesChan := ReadLinesConcurrently(paths)
-	finalSchema := InferSchemaConcurrently(linesChan, 2)
+	linesResult := ReadLinesConcurrently(paths)
+	finalSchema := InferSchemaConcurrently(linesResult, 2)
 
 	expectedSchema := &Schema{
 		Fields: []*FieldSchema{

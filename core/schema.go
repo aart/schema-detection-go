@@ -87,7 +87,7 @@ func inferFieldSchema(name string, value interface{}) (*FieldSchema, error) {
 			}
 			return &FieldSchema{Name: name, Type: bigquery.RecordFieldType, Fields: mergedSchema.Fields, Repeated: true, Required: true}, nil
 		}
-		
+
 		// It's a slice of primitives.
 		elemField, err := inferFieldSchema(name, value[0])
 		if err != nil {
@@ -134,7 +134,7 @@ func MergeSchemas(s1, s2 *Schema) *Schema {
 			f1.Required = false
 		}
 	}
-	
+
 	merged := &Schema{}
 	for _, f := range fieldMap {
 		merged.Fields = append(merged.Fields, f)
@@ -147,7 +147,6 @@ func MergeSchemas(s1, s2 *Schema) *Schema {
 	return merged
 }
 
-
 func mustMarshal(value interface{}) []byte {
 	bytes, err := json.Marshal(value)
 	if err != nil {
@@ -157,21 +156,28 @@ func mustMarshal(value interface{}) []byte {
 }
 
 // InferSchemaConcurrently infers the schema from a channel of JSON strings concurrently.
-func InferSchemaConcurrently(lines <-chan string, numWorkers int) *Schema {
+func InferSchemaConcurrently(linesResult *LinesResult, numWorkers int) *Schema {
 	var wg sync.WaitGroup
 	schemas := make(chan *Schema, numWorkers)
+	fieldCounts := make(map[string]int)
+	var mu sync.Mutex
 
 	for i := 0; i < numWorkers; i++ {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
 			var localMergedSchema *Schema
-			for line := range lines {
+			for line := range linesResult.Lines {
 				schema, err := InferSchema([]byte(line))
 				if err != nil {
 					// In a real application, you'd want to handle this error better.
 					continue
 				}
+				mu.Lock()
+				for _, field := range schema.Fields {
+					fieldCounts[field.Name]++
+				}
+				mu.Unlock()
 				if localMergedSchema == nil {
 					localMergedSchema = schema
 				} else {
@@ -196,6 +202,13 @@ func InferSchemaConcurrently(lines <-chan string, numWorkers int) *Schema {
 			finalSchema = schema
 		} else {
 			finalSchema = MergeSchemas(finalSchema, schema)
+		}
+	}
+
+	// Final check for required fields.
+	for _, field := range finalSchema.Fields {
+		if count, ok := fieldCounts[field.Name]; ok {
+			field.Required = count == linesResult.TotalLines
 		}
 	}
 
