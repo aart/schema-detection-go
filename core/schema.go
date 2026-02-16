@@ -3,11 +3,14 @@ package core
 import (
 	"encoding/json"
 	"fmt"
+	"os"
 	"sort"
 	"sync"
 
 	"cloud.google.com/go/bigquery"
 )
+
+
 
 // Schema represents a BigQuery schema.
 type Schema struct {
@@ -156,7 +159,7 @@ func mustMarshal(value interface{}) []byte {
 }
 
 // InferSchemaConcurrently infers the schema from a channel of JSON strings concurrently.
-func InferSchemaConcurrently(lines <-chan string, numWorkers int) *Schema {
+func InferSchemaConcurrently(lines <-chan LineInfo, numWorkers int) *Schema {
 	var wg sync.WaitGroup
 	schemas := make(chan *Schema, numWorkers)
 	fieldCounts := make(map[string]int)
@@ -168,14 +171,15 @@ func InferSchemaConcurrently(lines <-chan string, numWorkers int) *Schema {
 		go func() {
 			defer wg.Done()
 			var localMergedSchema *Schema
-			for line := range lines {
+			for lineInfo := range lines {
 				mu.Lock()
 				totalLines++
 				mu.Unlock()
 
-				schema, err := InferSchema([]byte(line))
+				schema, err := InferSchema([]byte(lineInfo.Content))
 				if err != nil {
-					// In a real application, you'd want to handle this error better.
+					// Log the filename and line number when JSON parsing fails
+					fmt.Fprintf(os.Stderr, "Error parsing JSON in file %s at line %d: %v\n", lineInfo.Filename, lineInfo.LineNumber, err)
 					continue
 				}
 				mu.Lock()
@@ -211,11 +215,16 @@ func InferSchemaConcurrently(lines <-chan string, numWorkers int) *Schema {
 	}
 
 	// Final check for required fields.
-	for _, field := range finalSchema.Fields {
-		if count, ok := fieldCounts[field.Name]; ok {
-			field.Required = count == totalLines
+	// This logic might need adjustment if totalLines includes errored lines
+	// or if required status is determined differently in the presence of errors.
+	if finalSchema != nil { // Ensure finalSchema is not nil before iterating
+		for _, field := range finalSchema.Fields {
+			if count, ok := fieldCounts[field.Name]; ok {
+				field.Required = count == totalLines
+			}
 		}
 	}
+
 
 	sort.Slice(finalSchema.Fields, func(i, j int) bool {
 		return finalSchema.Fields[i].Name < finalSchema.Fields[j].Name
