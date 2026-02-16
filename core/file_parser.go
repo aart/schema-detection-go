@@ -2,64 +2,42 @@ package core
 
 import (
 	"bufio"
+	"fmt"
 	"os"
+	"sync"
 )
 
-// OldReadLines reads a file and returns its content as a slice of strings, with each string representing a line.
-func OldReadLines(path string) ([]string, error) {
-	file, err := os.Open(path)
-	if err != nil {
-		return nil, err
-	}
-	defer file.Close()
 
-	var lines []string
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		lines = append(lines, scanner.Text())
-	}
-	return lines, scanner.Err()
-}
-
-// LinesResult holds a channel of strings and the total number of lines.
-type LinesResult struct {
-	Lines      <-chan string
-	TotalLines int
-}
 
 // ReadLines reads multiple files concurrently and sends the lines to a channel.
 func ReadLines(paths []string, numWorkers int) <-chan string {
 	lines := make(chan string)
-	wp := NewWorkerPool(numWorkers)
-	wp.Start()
+	var wg sync.WaitGroup
+
+	for _, path := range paths {
+		wg.Add(1)
+		go func(filePath string) {
+			defer wg.Done()
+			file, err := os.Open(filePath)
+			if err != nil {
+				// In a real application, you might want to log this error
+				fmt.Fprintf(os.Stderr, "Error opening file %s: %v\n", filePath, err)
+				return
+			}
+			defer file.Close()
+
+			scanner := bufio.NewScanner(file)
+			for scanner.Scan() {
+				lines <- scanner.Text()
+			}
+			if err := scanner.Err(); err != nil {
+				fmt.Fprintf(os.Stderr, "Error reading file %s: %v\n", filePath, err)
+			}
+		}(path)
+	}
 
 	go func() {
-		for _, path := range paths {
-			path := path
-			wp.Submit(Job{
-				Fn: func() interface{} {
-					file, err := os.Open(path)
-					if err != nil {
-						return nil
-					}
-					defer file.Close()
-
-					scanner := bufio.NewScanner(file)
-					for scanner.Scan() {
-						lines <- scanner.Text()
-					}
-					return nil
-				},
-			})
-		}
-		wp.Stop()
-	}()
-
-	go func() {
-		// This is not ideal, but for the sake of this test, we assume the results channel is drained
-		// somewhere else. In a real application, we would need to drain the results channel.
-		for range wp.Results() {
-		}
+		wg.Wait()
 		close(lines)
 	}()
 
